@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Blazored.SessionStorage;
 using Frontend;
+using Frontend.Services;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -14,5 +15,6 @@ builder.Services.AddScoped(sp => new HttpClient
 });
 
 builder.Services.AddBlazoredSessionStorage();
+builder.Services.AddScoped<LoginService>();
 
 await builder.Build().RunAsync();

@@ -1,0 +1,68 @@
+﻿@page "/login"
+@inject NavigationManager nav
+@inject LoginService login
+
+<div class="login-page">
+    <div class="login-box">
+        <h3>TaskSweeper</h3>
+
+        <div class="mb-3">
+            <label>Brugernavn</label>
+            <input type="text" class="form-control" @bind="username" @onkeyup="HandleKey" />
+        </div>
+
+        <div class="mb-3">
+            <label>Adgangskode</label>
+            <input type="password" class="form-control" @bind="password" @onkeyup="HandleKey" />
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorText))
+        {
+            <div class="error-message">
+                ⚠️ @errorText
+            </div>
+        }
+
+        <button class="btn btn-primary w-100" @onclick="ClickLogin">
+            Log ind
+        </button>
+    </div>
+</div>
+
+@code {
+    private string username = "";
+    private string password = "";
+    private string errorText = "";
+
+    // Binder sig til @onkeyup HandleKey på input felterne
+    // hvis der trykkes Enter kaldes OnClickLogin() metoden
+    private async Task HandleKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ClickLogin();
+        }
+    }
+
+    /* ClickLogin():
+     * Kalder LoginService.UserLogin for at finde match med username && password i backend.
+     * Hvis der findes et match, returneres User.UserId og det første ord i User.Name.
+     * Hvis true, kaldes LoginService.SetUserSession
+     * (Nødt til at skrive userId.Value, fordi LoginService forventer en int -- .Value beregner heltalsværdien int-værdien)
+     * (nav.Uri, forceLoad: true): Navigerer til den aktuelle side og tvinger browser til at hente siden igen fra serveren.
+     */
+    private async Task ClickLogin()
+    {
+        LoginResponse? user = await login.UserLogin(username, password);
+
+        if (user != null)
+        {
+            await login.SetUserSession(user);
+            nav.NavigateTo("/");
+        }
+        else
+        {
+            errorText = "Forkert brugernavn eller password";
+        }
+    }
+}

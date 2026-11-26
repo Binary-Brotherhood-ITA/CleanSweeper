@@ -1,0 +1,24 @@
+﻿@inject LoginService login
+
+<div class="user-info-bar">
+    <span>Logget ind som: @firstName</span>
+    <span>Rolle: @role</span>
+
+    <button @onclick="Logout">Log ud</button>
+</div>
+
+@code {
+    private string firstName = "";
+    private string role = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        firstName = await login.GetFirstName();
+        role = ""; //await login.GetRole();
+    }
+
+    private async Task Logout()
+    {
+        await login.Logout();
+    }
+}
