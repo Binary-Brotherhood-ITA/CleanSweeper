@@ -3,7 +3,7 @@ using Core;
 
 namespace Backend.Repositories
 {
-    public class UserLoginRepository
+    public class UserAccountRepository
     {
         private readonly IMongoCollection<UserAccount> _useraccounts;
 
@@ -12,17 +12,13 @@ namespace Backend.Repositories
         * 2. Vælger databasen
         * 3. Vælger collection og gemmer den i feltet _useraccounts
         */
-        public UserAccountRepository(IMongoClient mongoClient, IConfiguration configuration)
+        public UserAccountRepository(IMongoDatabase database)
         {
-            string databaseName = configuration["MongoDb:DatabaseName"] ?? "GenbrugDB";
-
-            IMongoDatabase database = mongoClient.GetDatabase(databaseName);
-
             _useraccounts = database.GetCollection<UserAccount>("UserAccounts");
         }
 
-        /* Søger efter en bruger med det angivne username.
-         * Hvis der findes en bruger er resultatet af .Find().FirstOrDefault ikke null og der returneres et User objekt
+        /* Søger efter en bruger med det angivne username && password.
+         * Hvis der findes en bruger er resultatet af .Find().FirstOrDefault ikke null og der returneres et UserAccount objekt
          * Ellers returneres null
          */
         public UserAccount? UserLogin(string username, string password)

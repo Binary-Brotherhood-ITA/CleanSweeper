@@ -14,7 +14,7 @@
     protected override async Task OnInitializedAsync()
     {
         firstName = await login.GetFirstName();
-        role = await login.GetRole();
+        role = ""; //await login.GetRole();
     }
 
     private async Task Logout()

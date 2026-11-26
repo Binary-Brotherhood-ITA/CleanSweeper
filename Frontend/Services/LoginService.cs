@@ -14,34 +14,18 @@ using System.Net.Http.Json;
 */
 
 /* LOGIC FLOW:
-* * * LoginService: Til at autentificere brugerens login. Kontakter DB. 
+* * * LoginService: Til at autentificere brugerens login.
 * 
-* * * Når Peter logger ind:
-* Peter indtaster brugernavn og password i LoginModal.
-* LoginModal kalder login.UserLogin(username, password).
-* LoginService sender oplysningerne til API'et.
-* Backend finder Peter i databasen og returnerer hans brugeroplysninger.
-* LoginService returnerer Peters userId og firstName til LoginModal.
-* LoginModal kalder SetUserSession().
-* LoginService gemmer userId, username, firstName og isLoggedIn i sessionStorage.
-* LoginService kalder OnUserStateChanged?.Invoke().
-* MainLayout har allerede tilmeldt sig eventen med +=, så den får besked om ændringen.
-* MainLayout kalder sin egen metode UpdateLoginStatus().
-* UpdateLoginStatus() henter Peters fornavn fra sessionStorage.
-* StateHasChanged() fortæller Blazor, at komponenten skal tegnes igen, så Peter nu vises i topbjælken.
-* 
-* * * Når Peter logger ud:
-* Peter klikker på Log ud i LoginModal.
-* LoginModal kalder login.Logout().
-* LoginService fjerner Peters oplysninger fra sessionStorage.
-* LoginService kalder igen OnUserStateChanged?.Invoke().
-* MainLayout får besked om ændringen.
-* MainLayout forsøger at hente fornavnet, men sessionStorage er nu tom.
-* loggedInAs bliver en tom string.
-* StateHasChanged() opdaterer visningen, og teksten med Peters navn forsvinder.
+* Når brugeren logger ind
+1. LoginPage:    Sender Username og Password til api/login.
+2. LoginController:   Modtager loginoplysningerne.
+3. UserAccountRepository:   Finder den matchende konto i UserAccounts.
+4. UserRepository:   Bruger kontoens UserID til at finde medarbejderen i Users.
+5. LoginController:   Samler oplysningerne i et LoginResponse-objekt og sender det tilbage.
+6. LoginService:   Modtager svaret og gemmer brugeroplysningerne i SessionStorage.
  */
 
-namespace GenbrugEaa.Services
+namespace Frontend.Services
 {
     public class LoginService
     {
@@ -57,27 +41,25 @@ namespace GenbrugEaa.Services
         }
 
         /* UserLogin():
-         * Opretter nyt UserLogin objekt. 
-         * Kalder Post API hos UserLoginController
-         * Den får response som er et HTTP-svar fra UserLoginController.
-         * Hvis der er success, så læses JSON-indholdet og det gemmes som loggedInUser og returnerer Id og det første navn i loggedInUser.Name. 
-         * Hvis den ikke finder noget første navn returneres "" 
+         * Opretter nyt UserAccount objekt. 
+         * Kalder Post API hos UserAccountController
+         * Den får response som er et HTTP-svar fra UserAccountController.
+         * Hvis der er success, så læses JSON-indholdet og det gemmes som loggedInUser og et LoginResponse objekt. 
          * Ellers returneres null.
          */
-        public async Task<(int? userId, string firstName)> UserLogin(string username, string password)
+        public async Task<LoginResponse?> UserLogin(string username, string password)
         {
-            UserAccount user = new UserAccount { Username = username, Password = password };
+            UserAccount userAccount = new UserAccount { Username = username, Password = password };
 
-            HttpResponseMessage response = await Http.PostAsJsonAsync("api/login", user);
+            HttpResponseMessage response = await Http.PostAsJsonAsync("api/login", userAccount);
 
             if (response.IsSuccessStatusCode)
             {
-                UserAccount? loggedInUser = await response.Content.ReadFromJsonAsync<User>();
-                return (loggedInUser?.Id, loggedInUser?.Name?.Split(' ')[0] ?? "");
+                return await response.Content.ReadFromJsonAsync<LoginResponse>();
             }
             else
             {
-                return (null, "");
+                return (null);
             }
         }
 
@@ -87,12 +69,14 @@ namespace GenbrugEaa.Services
          * OnUserStateChanged?.Invoke(): Fortæller resten af appen, når brugerstatus ændres. 
          * "Hvis nogen lytter på dette event, så kald alle metoder, der har tilmeldt sig"
          */
-        public async Task SetUserSession(int userId, string username, string firstName)
+        public async Task SetUserSession(LoginResponse user)
         {
-            await sessionStorage.SetItemAsync("userId", userId);
-            await sessionStorage.SetItemAsync("username", username);
-            await sessionStorage.SetItemAsync("firstName", firstName);
+            await sessionStorage.SetItemAsync("userId", user.UserID);
+            await sessionStorage.SetItemAsync("username", user.Username);
+            await sessionStorage.SetItemAsync("firstName", user.FirstName);
+            await sessionStorage.SetItemAsync("role", user.Role);
             await sessionStorage.SetItemAsync("isLoggedIn", true);
+
             OnUserStateChanged?.Invoke();
         }
 
