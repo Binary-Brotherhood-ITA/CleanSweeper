@@ -46,13 +46,14 @@
 
     /* ClickLogin():
      * Kalder LoginService.UserLogin for at finde match med username && password i backend.
-     * Hvis der findes et match, returneres User.UserId og det første ord i User.Name.
-     * Hvis true, kaldes LoginService.SetUserSession
-     * (Nødt til at skrive userId.Value, fordi LoginService forventer en int -- .Value beregner heltalsværdien int-værdien)
-     * (nav.Uri, forceLoad: true): Navigerer til den aktuelle side og tvinger browser til at hente siden igen fra serveren.
+     * Der returneres et LoginResponse-objekt eller null. 
+     * Hvis ikke null, kaldes LoginService.SetUserSession med LoginResponse-objektet og bruger navigeres til hovedsiden.
+     * Hvis null, vises en fejlbesked.
      */
     private async Task ClickLogin()
     {
+        errorText = "";
+
         LoginResponse? user = await login.UserLogin(username, password);
 
         if (user != null)

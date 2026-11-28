@@ -2,6 +2,21 @@ using Backend.Repositories;
 using MongoDB.Driver;
 var builder = WebApplication.CreateBuilder(args);
 
+/* AddCors: 
+ * Selvom frontend og backend kører på localhost, er de to forskellige origins, fordi portene er forskellige.
+ * Browseren har derfor en sikkerhedsregel, der som udgangspunkt forhindrer frontend i at læse svar fra backend, medmindre backend giver tilladelse gennem CORS.
+ * Her definerer vi sikkerhedspolitik: Vi tillader requests fra frontend på port 7030, Tillader HTTP-headers, Tillader alle metoder (GET, POST, PUT, DELETE osv.)
+ */
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("https://localhost:7030")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -32,6 +47,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 

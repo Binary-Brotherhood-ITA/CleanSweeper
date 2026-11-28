@@ -41,10 +41,12 @@ namespace Frontend.Services
         }
 
         /* UserLogin():
+         * Undersøger med backend om username og password findes.
+         * 
          * Opretter nyt UserAccount objekt. 
          * Kalder Post API hos UserAccountController
-         * Den får response som er et HTTP-svar fra UserAccountController.
-         * Hvis der er success, så læses JSON-indholdet og det gemmes som loggedInUser og et LoginResponse objekt. 
+         * Den modtager en HttpResponseMessage fra UserAccountController.
+         * Hvis der er success, så læses JSON-indholdet som et LoginResponse-objekt (UserID, Username, FirstName og Role) og det returneres. 
          * Ellers returneres null.
          */
         public async Task<LoginResponse?> UserLogin(string username, string password)
@@ -65,8 +67,10 @@ namespace Frontend.Services
 
         /* SetUserSession():
          * Hvis et login er gyldigt skal LoginService.SetUserSession(username) kaldes. 
-         * gemmer username og bool i sessionStorage - fortæller hvilken bruger og om bruger er logget ind.
-         * OnUserStateChanged?.Invoke(): Fortæller resten af appen, når brugerstatus ændres. 
+         * 
+         * Gemmer UserID, Username, FirstName, Role og isLoggedIn i sessionStorage.
+         * 
+         * OnUserStateChanged?.Invoke(): Fortæller resten af appen, når brugerstatus ændres.
          * "Hvis nogen lytter på dette event, så kald alle metoder, der har tilmeldt sig"
          */
         public async Task SetUserSession(LoginResponse user)
@@ -91,22 +95,28 @@ namespace Frontend.Services
             await sessionStorage.RemoveItemAsync("userId");
             await sessionStorage.RemoveItemAsync("username");
             await sessionStorage.RemoveItemAsync("firstName");
+            await sessionStorage.RemoveItemAsync("role");
             await sessionStorage.RemoveItemAsync("isLoggedIn");
+
             OnUserStateChanged?.Invoke();
         }
 
         /* IsLoggedIn():
-         * Når sider med begrænset adgang åbnes, skal LoginService.
-         * Henter username og isLoggedIn bool fra sessionStorage.
-         * Hvis værdier er gyldige returneres true. 
-         * Ellers returneres false. 
+         * Når sider med begrænset adgang åbnes, skal LoginService.IsLoggedIn kaldes.
+         * 
+         * Henter data fra sessionStorage (som indikerer et godkendt login har fundet sted).
+         * 
+         * Gyldig login-session: Hvis ingen af værdierne er null og isLoggedIn==true, returneres true. 
+         * Ugyldig login-session: Ellers returneres false. 
          */
         public async Task<bool> IsLoggedIn()
         {
             int? userId = await sessionStorage.GetItemAsync<int?>("userId");
             string? username = await sessionStorage.GetItemAsync<string?>("username");
+            string? firstName = await sessionStorage.GetItemAsync<string?>("firstName");
+            string? role = await sessionStorage.GetItemAsync<string?>("role");
             bool isLoggedIn = await sessionStorage.GetItemAsync<bool>("isLoggedIn");
-            if (userId != null && username != null && isLoggedIn)
+            if (userId != null && username != null && firstName != null && role != null && isLoggedIn)
             {
                 return true;
             }
